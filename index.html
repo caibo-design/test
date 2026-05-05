@@ -288,6 +288,125 @@
     line-height: 1.8;
   }
 
+  /* PRICING */
+  .pricing { margin-bottom: 32px; }
+  .price-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 760px) {
+    .price-grid { grid-template-columns: 1fr; }
+  }
+  .price-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 28px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .price-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  }
+  .price-card.featured {
+    border-color: var(--accent);
+    box-shadow: 0 4px 16px rgba(200,51,42,0.10);
+  }
+  .price-card .badge {
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    letter-spacing: 4px;
+    padding: 4px 14px;
+    border-radius: 99px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .price-card .tier {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .price-card h3 {
+    font-size: 22px;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .price-card .sub-tag {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+  }
+  .price-card .price {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .price-card .price .num {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-dark);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+  .price-card .price .unit {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 4px;
+    letter-spacing: 1px;
+  }
+  .price-card .features-list {
+    list-style: none;
+    margin: 0 0 22px;
+    padding: 0;
+    flex: 1;
+  }
+  .price-card .features-list li {
+    font-size: 13px;
+    color: var(--text-dark);
+    padding: 6px 0 6px 22px;
+    position: relative;
+    letter-spacing: 0.5px;
+    line-height: 1.6;
+  }
+  .price-card .features-list li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .price-card .pick {
+    display: inline-block;
+    text-align: center;
+    background: var(--text-dark);
+    color: var(--paper);
+    padding: 12px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    letter-spacing: 3px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    transition: background 0.15s;
+  }
+  .price-card .pick:hover { background: #000; }
+  .price-card.featured .pick { background: var(--accent); }
+  .price-card.featured .pick:hover { background: #9c2620; }
+
   footer {
     text-align: center;
     margin-top: 40px;
@@ -401,8 +520,65 @@
       </div>
     </section>
 
-    <section class="cta">
-      <h3>想客製專屬主題？</h3>
+    <section class="pricing">
+      <div class="section-title">
+        <div class="label">PRICING</div>
+        <h2>服務方案</h2>
+      </div>
+
+      <div class="price-grid">
+        <div class="price-card">
+          <div class="tier">BASIC</div>
+          <h3>基礎版</h3>
+          <div class="sub-tag">標準主題快速上線</div>
+          <div class="price"><span class="num">NT$ 12,000</span><span class="unit">起 / 檔期</span></div>
+          <ul class="features-list">
+            <li>從 4 個現成主題擇一套用</li>
+            <li>套用品牌 logo 與主色</li>
+            <li>三階優惠券設計與文案</li>
+            <li>基本轉化率報表（流量、解鎖、兌換）</li>
+            <li>部署於我方 demo 子網域</li>
+          </ul>
+          <a class="pick" href="#contact">選擇此方案 →</a>
+        </div>
+
+        <div class="price-card featured">
+          <div class="badge">推薦</div>
+          <div class="tier">PRO</div>
+          <h3>進階版</h3>
+          <div class="sub-tag">自有網域 + 客製設計</div>
+          <div class="price"><span class="num">NT$ 36,000</span><span class="unit">起 / 檔期</span></div>
+          <ul class="features-list">
+            <li>包含「基礎版」全部功能</li>
+            <li>客製主題色、字型、版面</li>
+            <li>部署於品牌自有網域</li>
+            <li>進階分析（漏斗、停留、分享數）</li>
+            <li>多檔期主題輪替（春夏秋冬）</li>
+            <li>客製優惠券圖卡</li>
+          </ul>
+          <a class="pick" href="#contact">選擇此方案 →</a>
+        </div>
+
+        <div class="price-card">
+          <div class="tier">ULTIMATE</div>
+          <h3>高級版</h3>
+          <div class="sub-tag">完全客製互動行銷</div>
+          <div class="price"><span class="num">量身估價</span></div>
+          <ul class="features-list">
+            <li>包含「進階版」全部功能</li>
+            <li>完全客製主題與互動（不限套版）</li>
+            <li>自訂方塊圖（真實商品照）</li>
+            <li>跨用戶排行榜（後端資料庫）</li>
+            <li>會員系統 / CRM 串接</li>
+            <li>專屬設計與行銷顧問</li>
+          </ul>
+          <a class="pick" href="#contact">聯絡我們 →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta" id="contact">
+      <h3>有問題或想客製？</h3>
       <p>提供 logo、品牌色、菜單／品項，最快一週完成上線<br/>歡迎接洽討論</p>
     </section>
 
