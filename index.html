@@ -3,110 +3,156 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>2048</title>
+<title>二熊 2048 ・ 壽司進化</title>
 <style>
   :root {
-    --bg: #faf8ef;
-    --board-bg: #bbada0;
-    --cell-bg: #cdc1b4;
-    --text-dark: #776e65;
-    --text-light: #f9f6f2;
+    --bg: #f5ecdc;
+    --paper: #fdf8ef;
+    --board-bg: #2b1d12;
+    --cell-bg: #3d2c1e;
+    --text-dark: #1a1a1a;
+    --text-muted: #6b5d4d;
+    --text-light: #fdf8ef;
+    --accent: #c8332a;
+    --accent-dark: #9c2620;
+    --gold: #b8945a;
+    --line: #d8c9b0;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     height: 100%;
     background: var(--bg);
     color: var(--text-dark);
-    font-family: "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "PingFang TC", "Noto Serif TC", "Microsoft JhengHei", serif;
     -webkit-tap-highlight-color: transparent;
   }
   body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px 12px 40px;
+    padding: 16px 12px 40px;
     user-select: none;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(200,51,42,0.04), transparent 40%),
+      radial-gradient(circle at 90% 100%, rgba(184,148,90,0.06), transparent 40%);
   }
   .container {
     width: 100%;
     max-width: 480px;
   }
+
   header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
     gap: 12px;
+    margin-bottom: 14px;
   }
-  h1 {
-    font-size: 56px;
+  .logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .logo img { width: 100%; height: 100%; object-fit: contain; }
+  .brand { flex: 1; }
+  .brand h1 {
+    font-size: 28px;
     font-weight: 700;
-    color: var(--text-dark);
+    letter-spacing: 4px;
+    line-height: 1;
   }
+  .brand .tag {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 2px;
+  }
+
   .scores {
     display: flex;
     gap: 8px;
+    margin-bottom: 12px;
   }
   .score-box {
     background: var(--board-bg);
     color: var(--text-light);
     border-radius: 6px;
-    padding: 8px 16px;
+    padding: 8px 14px;
     text-align: center;
-    min-width: 80px;
+    flex: 1;
   }
   .score-box .label {
     font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #eee4da;
+    letter-spacing: 2px;
+    color: var(--gold);
   }
   .score-box .value {
     font-size: 22px;
     font-weight: 700;
     line-height: 1.2;
+    font-family: "Helvetica Neue", Arial, sans-serif;
   }
-  .subtitle {
+
+  .toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
     gap: 8px;
-  }
-  .subtitle p {
-    font-size: 14px;
-    flex: 1;
-    min-width: 220px;
+    margin-bottom: 14px;
   }
   .btn {
-    background: #8f7a66;
+    background: var(--text-dark);
     color: var(--text-light);
     border: none;
-    border-radius: 6px;
-    padding: 10px 18px;
-    font-size: 14px;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 2px;
+    flex: 1;
+    font-family: inherit;
   }
-  .btn:hover { background: #7c6957; }
+  .btn:hover { background: #000; }
   .btn:active { transform: translateY(1px); }
+  .btn.accent { background: var(--accent); }
+  .btn.accent:hover { background: var(--accent-dark); }
+  .btn.outline {
+    background: transparent;
+    color: var(--text-dark);
+    border: 1.5px solid var(--text-dark);
+  }
+  .btn.outline:hover { background: var(--text-dark); color: var(--text-light); }
+
+  .progress-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .progress-hint strong { color: var(--accent); }
 
   .board {
     position: relative;
     background: var(--board-bg);
     border-radius: 8px;
-    padding: 12px;
+    padding: 10px;
     width: 100%;
     aspect-ratio: 1 / 1;
     touch-action: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
   }
   .grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(4, 1fr);
-    gap: 12px;
+    gap: 10px;
     width: 100%;
     height: 100%;
   }
@@ -116,25 +162,28 @@
   }
   .tiles {
     position: absolute;
-    inset: 12px;
+    inset: 10px;
     pointer-events: none;
   }
   .tile {
     position: absolute;
-    width: calc((100% - 36px) / 4);
-    height: calc((100% - 36px) / 4);
+    width: calc((100% - 30px) / 4);
+    height: calc((100% - 30px) / 4);
     border-radius: 4px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     font-weight: 700;
-    font-size: clamp(20px, 7vw, 36px);
+    text-align: center;
+    line-height: 1.1;
     transition: transform 0.12s ease-in-out;
     background: #eee4da;
     color: var(--text-dark);
+    padding: 4px;
   }
   .tile.new { animation: appear 0.18s ease-in-out; }
-  .tile.merged { animation: pop 0.18s ease-in-out; }
+  .tile.merged { animation: pop 0.2s ease-in-out; }
   @keyframes appear {
     0% { transform: scale(0); }
     100% { transform: scale(1); }
@@ -144,109 +193,416 @@
     50% { transform: scale(1.18); }
     100% { transform: scale(1); }
   }
+  .tile .name {
+    font-size: clamp(11px, 3.4vw, 17px);
+    letter-spacing: 1px;
+  }
+  .tile .num {
+    font-size: clamp(9px, 2.4vw, 12px);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    opacity: 0.65;
+    margin-top: 2px;
+    font-weight: 500;
+  }
 
-  .tile-2    { background: #eee4da; color: #776e65; }
-  .tile-4    { background: #ede0c8; color: #776e65; }
-  .tile-8    { background: #f2b179; color: #f9f6f2; }
-  .tile-16   { background: #f59563; color: #f9f6f2; }
-  .tile-32   { background: #f67c5f; color: #f9f6f2; }
-  .tile-64   { background: #f65e3b; color: #f9f6f2; }
-  .tile-128  { background: #edcf72; color: #f9f6f2; font-size: clamp(18px, 6vw, 32px); }
-  .tile-256  { background: #edcc61; color: #f9f6f2; font-size: clamp(18px, 6vw, 32px); }
-  .tile-512  { background: #edc850; color: #f9f6f2; font-size: clamp(18px, 6vw, 32px); }
-  .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: clamp(15px, 5vw, 26px); }
-  .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: clamp(15px, 5vw, 26px); }
-  .tile-super { background: #3c3a32; color: #f9f6f2; font-size: clamp(13px, 4.5vw, 22px); }
+  .tile-2    { background: #e8d5b7; color: #3a2a1a; }
+  .tile-4    { background: #f5ecd9; color: #3a2a1a; }
+  .tile-8    { background: #2c4a3e; color: #f5ecd9; }
+  .tile-16   { background: #f5d96a; color: #3a2a1a; }
+  .tile-32   { background: #f4a896; color: #4a1f15; }
+  .tile-64   { background: #f08758; color: #fff; }
+  .tile-128  { background: #c84545; color: #fff; }
+  .tile-256  { background: #d4894a; color: #fff; }
+  .tile-512  { background: #e8a83e; color: #fff; box-shadow: 0 0 0 2px #b8945a inset; }
+  .tile-1024 { background: #5c3a1e; color: #f5ecd9; box-shadow: 0 0 0 2px #b8945a inset; }
+  .tile-2048 { background: #c8332a; color: #fff; box-shadow: 0 0 12px rgba(200,51,42,0.5), 0 0 0 2px #f5d96a inset; }
+  .tile-super { background: #1a1a1a; color: #f5d96a; box-shadow: 0 0 0 2px #c8332a inset; }
 
+  /* Overlay */
   .overlay {
     position: absolute;
     inset: 0;
-    background: rgba(238, 228, 218, 0.73);
+    background: rgba(245, 236, 220, 0.94);
     border-radius: 8px;
     display: none;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    z-index: 10;
+    z-index: 20;
     padding: 20px;
   }
   .overlay.show { display: flex; }
-  .overlay.win { background: rgba(237, 194, 46, 0.5); color: var(--text-light); }
   .overlay h2 {
-    font-size: 44px;
+    font-size: 32px;
+    margin-bottom: 8px;
+    letter-spacing: 4px;
+  }
+  .overlay p {
+    color: var(--text-muted);
     margin-bottom: 16px;
+    font-size: 14px;
   }
   .overlay .actions { display: flex; gap: 8px; }
 
-  footer {
-    margin-top: 20px;
+  /* Coupon Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: transparent;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .coupon {
+    width: 100%;
+    background: var(--paper);
+    border: 2px solid var(--text-dark);
+    border-radius: 4px;
+    padding: 24px 20px 20px;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    background-image:
+      repeating-linear-gradient(45deg, transparent 0 14px, rgba(200,51,42,0.025) 14px 15px);
+  }
+  .coupon::before, .coupon::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: var(--bg);
+    border: 2px solid var(--text-dark);
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .coupon::before { left: -10px; }
+  .coupon::after { right: -10px; }
+  .coupon-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1.5px dashed var(--line);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+  }
+  .coupon-head .logo-mini {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1.5px solid var(--text-dark);
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .coupon-head .logo-mini img { width: 100%; height: 100%; object-fit: contain; }
+  .coupon-head .titles { flex: 1; text-align: left; }
+  .coupon-head .titles .name {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 4px;
+  }
+  .coupon-head .titles .sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  .coupon-body { text-align: center; padding: 8px 0 14px; position: relative; }
+  .coupon-body .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+  }
+  .coupon-body .prize {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    line-height: 1.2;
+  }
+  .coupon-body .prize-sub {
     font-size: 13px;
     color: var(--text-dark);
-    text-align: center;
-    line-height: 1.6;
+    margin-top: 6px;
+    letter-spacing: 1px;
   }
-  footer strong { font-weight: 700; }
+  .stamp {
+    position: absolute;
+    right: 8px;
+    bottom: -10px;
+    width: 64px;
+    height: 64px;
+    border: 3px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    transform: rotate(-12deg);
+    background: rgba(253, 248, 239, 0.5);
+    opacity: 0.85;
+    line-height: 1;
+    text-align: center;
+    padding: 4px;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+  }
+  .coupon-foot {
+    border-top: 1.5px dashed var(--line);
+    padding-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+  .coupon-foot .row { text-align: left; }
+  .coupon-foot .row.right { text-align: right; }
+  .coupon-foot .row strong {
+    display: block;
+    color: var(--text-dark);
+    font-weight: 700;
+    margin-top: 2px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 1px;
+  }
+  .coupon-terms {
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .modal-actions .btn { flex: 1; }
+
+  /* Coupon list (我的優惠券) */
+  .coupon-list .coupon { transform: scale(0.95); margin-bottom: 8px; }
+  .coupon-list-wrap {
+    width: 100%;
+    max-width: 380px;
+    background: var(--paper);
+    border-radius: 8px;
+    padding: 16px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .coupon-list-wrap h3 {
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 4px;
+    font-size: 18px;
+  }
+  .empty {
+    text-align: center;
+    padding: 24px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  footer {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+  }
+  footer .line {
+    height: 1px;
+    background: var(--line);
+    margin: 8px 30px;
+  }
 
   @media (max-width: 420px) {
-    h1 { font-size: 44px; }
-    .score-box { padding: 6px 12px; min-width: 70px; }
-    .score-box .value { font-size: 18px; }
+    .brand h1 { font-size: 22px; }
+    .logo { width: 54px; height: 54px; }
+    .stamp { width: 54px; height: 54px; font-size: 18px; }
+    .coupon-body .prize { font-size: 26px; }
   }
 </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>2048</h1>
-      <div class="scores">
-        <div class="score-box">
-          <div class="label">分數</div>
-          <div class="value" id="score">0</div>
-        </div>
-        <div class="score-box">
-          <div class="label">最高</div>
-          <div class="value" id="best">0</div>
-        </div>
+      <div class="logo">
+        <img id="brand-logo" src="logo.png" alt="二熊"
+             onerror="this.style.display='none'; this.parentElement.textContent='二熊';" />
+      </div>
+      <div class="brand">
+        <h1>二熊</h1>
+        <div class="tag">壽司進化 ・ 2048</div>
       </div>
     </header>
-    <div class="subtitle">
-      <p>合併數字方塊，達成 <strong>2048</strong>！使用方向鍵或滑動來移動方塊。</p>
+
+    <div class="scores">
+      <div class="score-box">
+        <div class="label">分數</div>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="label">最高</div>
+        <div class="value" id="best">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn outline" id="my-coupons">我的優惠券</button>
       <button class="btn" id="new-game">新遊戲</button>
     </div>
+
+    <div class="progress-hint" id="hint">合併食材 → 達成壽司進化，解鎖 <strong>二熊</strong> 限定優惠</div>
+
     <div class="board" id="board">
       <div class="grid" id="grid"></div>
       <div class="tiles" id="tiles"></div>
       <div class="overlay" id="overlay">
-        <h2 id="overlay-title">遊戲結束！</h2>
+        <h2 id="overlay-title">遊戲結束</h2>
+        <p id="overlay-msg">本回合食材已用盡</p>
         <div class="actions">
-          <button class="btn" id="overlay-continue" style="display:none;">繼續</button>
           <button class="btn" id="overlay-restart">再來一局</button>
         </div>
       </div>
     </div>
+
     <footer>
-      <strong>玩法：</strong>方向鍵 ↑ ↓ ← → 移動方塊；相同數字相撞會合併。<br />
-      手機請於棋盤上滑動。
+      <div>方向鍵 ↑ ↓ ← → 移動 ・ 手機請於棋盤上滑動</div>
+      <div class="line"></div>
+      <div>達 512 / 1024 / 2048 解鎖優惠券，截圖至門市出示即可</div>
     </footer>
+  </div>
+
+  <!-- Coupon modal -->
+  <div class="modal-backdrop" id="coupon-modal">
+    <div class="modal">
+      <div class="coupon" id="coupon-card">
+        <div class="coupon-head">
+          <div class="logo-mini">
+            <img src="logo.png" alt="二熊"
+                 onerror="this.style.display='none'; this.parentElement.textContent='熊';" />
+          </div>
+          <div class="titles">
+            <div class="name">二熊</div>
+            <div class="sub">FUTAKUMA ・ 賀禮券</div>
+          </div>
+        </div>
+        <div class="coupon-body">
+          <div class="label">PRIZE</div>
+          <div class="prize" id="coupon-prize">9 折優惠</div>
+          <div class="prize-sub" id="coupon-sub">達成 512 ・ 甜蝦壽司</div>
+          <div class="stamp">二熊<br/>之印</div>
+        </div>
+        <div class="coupon-foot">
+          <div class="row">
+            編號
+            <strong id="coupon-serial">FT-00000000</strong>
+          </div>
+          <div class="row right">
+            有效期限
+            <strong id="coupon-expiry">2026/06/04</strong>
+          </div>
+        </div>
+        <div class="coupon-terms">
+          本券限二熊門市內用使用一次 ・ 不得與其他優惠並用 ・ 請於有效期內出示截圖
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn outline" id="coupon-close">繼續遊戲</button>
+        <button class="btn accent" id="coupon-screenshot-hint">截圖保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coupon list modal -->
+  <div class="modal-backdrop" id="list-modal">
+    <div class="coupon-list-wrap">
+      <h3>我的優惠券</h3>
+      <div class="coupon-list" id="coupon-list"></div>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button class="btn outline" id="list-close">關閉</button>
+      </div>
+    </div>
   </div>
 
 <script>
 (function () {
   const SIZE = 4;
-  const STORAGE_KEY = "claude-2048-best";
+  const STORAGE_KEY = "futakuma-2048-best";
+  const COUPON_KEY = "futakuma-2048-coupons";
+
+  // 11 階壽司進化命名
+  const TILE_NAMES = {
+    2: "醬油",
+    4: "白米",
+    8: "海苔",
+    16: "玉子",
+    32: "甜蝦",
+    64: "鮭魚",
+    128: "鮪魚",
+    256: "炙燒干貝",
+    512: "海膽軍艦",
+    1024: "鰻魚壽司",
+    2048: "二熊極上",
+  };
+
+  // 優惠券設定
+  const COUPONS = {
+    512:  { prize: "9 折優惠", sub: "達成 512 ・ 海膽軍艦", days: 30 },
+    1024: { prize: "招待味噌湯一碗", sub: "達成 1024 ・ 鰻魚壽司", days: 30 },
+    2048: { prize: "8 折優惠 ・ 招待招牌握壽司", sub: "達成 2048 ・ 二熊極上套餐", days: 60 },
+  };
+
   const gridEl = document.getElementById("grid");
   const tilesEl = document.getElementById("tiles");
   const scoreEl = document.getElementById("score");
   const bestEl = document.getElementById("best");
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlay-title");
-  const overlayContinue = document.getElementById("overlay-continue");
+  const overlayMsg = document.getElementById("overlay-msg");
   const overlayRestart = document.getElementById("overlay-restart");
   const newGameBtn = document.getElementById("new-game");
+  const myCouponsBtn = document.getElementById("my-coupons");
   const boardEl = document.getElementById("board");
 
-  let board, score, best, tileId, won, keepPlaying;
+  const couponModal = document.getElementById("coupon-modal");
+  const couponPrize = document.getElementById("coupon-prize");
+  const couponSub = document.getElementById("coupon-sub");
+  const couponSerial = document.getElementById("coupon-serial");
+  const couponExpiry = document.getElementById("coupon-expiry");
+  const couponClose = document.getElementById("coupon-close");
+  const couponScreenshotHint = document.getElementById("coupon-screenshot-hint");
+
+  const listModal = document.getElementById("list-modal");
+  const couponListEl = document.getElementById("coupon-list");
+  const listClose = document.getElementById("list-close");
+
+  let board, score, best, tileId, unlocked;
 
   for (let i = 0; i < SIZE * SIZE; i++) {
     const c = document.createElement("div");
@@ -260,6 +616,29 @@
   }
   function saveBest() {
     try { localStorage.setItem(STORAGE_KEY, String(best)); } catch (e) {}
+  }
+
+  function loadCoupons() {
+    try {
+      const raw = localStorage.getItem(COUPON_KEY);
+      if (!raw) return [];
+      return JSON.parse(raw);
+    } catch (e) { return []; }
+  }
+  function saveCoupons(list) {
+    try { localStorage.setItem(COUPON_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+
+  function fmtDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}/${m}/${day}`;
+  }
+  function genSerial() {
+    const ts = Date.now().toString(36).toUpperCase().slice(-6);
+    const rnd = Math.floor(Math.random() * 0xff).toString(16).toUpperCase().padStart(2, "0");
+    return `FT-${ts}${rnd}`;
   }
 
   function emptyBoard() {
@@ -292,12 +671,16 @@
     board = emptyBoard();
     score = 0;
     tileId = 0;
-    won = false;
-    keepPlaying = false;
+    unlocked = new Set();
     spawn();
     spawn();
-    overlay.classList.remove("show", "win");
+    overlay.classList.remove("show");
     render();
+  }
+
+  function tileClass(v) {
+    if (v <= 2048) return "tile-" + v;
+    return "tile-super";
   }
 
   function render() {
@@ -309,13 +692,15 @@
         if (!t || seen.has(t.id)) continue;
         seen.add(t.id);
         const el = document.createElement("div");
-        const v = t.value;
-        let cls = "tile tile-" + (v <= 2048 ? v : "super");
+        let cls = "tile " + tileClass(t.value);
         if (t.isNew) cls += " new";
         if (t.merged) cls += " merged";
         el.className = cls;
-        el.textContent = v;
-        const pct = (idx) => `calc((100% - 36px) / 4 * ${idx} + 12px * ${idx})`;
+
+        const name = TILE_NAMES[t.value] || "極み";
+        el.innerHTML = `<div class="name">${name}</div><div class="num">${t.value}</div>`;
+
+        const pct = (idx) => `calc((100% - 30px) / 4 * ${idx} + 10px * ${idx})`;
         el.style.left = pct(t.col);
         el.style.top = pct(t.row);
         tilesEl.appendChild(el);
@@ -341,32 +726,27 @@
       }
     return true;
   }
-
   function rotateCW(b) {
-    const n = SIZE;
-    const r = emptyBoard();
+    const n = SIZE, r = emptyBoard();
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++)
         r[j][n - 1 - i] = b[i][j];
     return r;
   }
   function rotateCCW(b) {
-    const n = SIZE;
-    const r = emptyBoard();
+    const n = SIZE, r = emptyBoard();
     for (let i = 0; i < n; i++)
       for (let j = 0; j < n; j++)
         r[n - 1 - j][i] = b[i][j];
     return r;
   }
-  function flipH(b) {
-    return b.map((row) => row.slice().reverse());
-  }
+  function flipH(b) { return b.map((row) => row.slice().reverse()); }
 
-  // Slide and merge a single row to the LEFT
   function slideRowLeft(row) {
     const filtered = row.filter((t) => t);
     const out = [];
     let gained = 0;
+    let reachedMilestones = [];
     for (let i = 0; i < filtered.length; i++) {
       const cur = filtered[i];
       const next = filtered[i + 1];
@@ -379,24 +759,26 @@
         };
         out.push(merged);
         gained += merged.value;
-        if (merged.value === 2048) won = true;
+        if (COUPONS[merged.value]) reachedMilestones.push(merged.value);
         i++;
       } else {
         out.push(cur);
       }
     }
     while (out.length < SIZE) out.push(null);
-    return { row: out, gained };
+    return { row: out, gained, reachedMilestones };
   }
 
   function moveLeft(b) {
     let gained = 0;
+    const milestones = [];
     const newBoard = b.map((row) => {
       const r = slideRowLeft(row);
       gained += r.gained;
+      milestones.push(...r.reachedMilestones);
       return r.row;
     });
-    return { board: newBoard, gained };
+    return { board: newBoard, gained, milestones };
   }
 
   function move(direction) {
@@ -405,16 +787,15 @@
     else if (direction === "up") working = rotateCCW(working);
     else if (direction === "down") working = rotateCW(working);
 
-    const { board: moved, gained } = moveLeft(working);
+    const { board: moved, gained, milestones } = moveLeft(working);
 
     let result = moved;
     if (direction === "right") result = flipH(result);
     else if (direction === "up") result = rotateCW(result);
     else if (direction === "down") result = rotateCCW(result);
 
-    if (sameBoardState(board, result)) return false;
+    if (sameBoardState(board, result)) return { moved: false };
 
-    // Update positions
     for (let r = 0; r < SIZE; r++)
       for (let c = 0; c < SIZE; c++) {
         if (result[r][c]) {
@@ -425,7 +806,7 @@
 
     board = result;
     score += gained;
-    return true;
+    return { moved: true, milestones };
   }
 
   function canMove() {
@@ -439,32 +820,93 @@
     return false;
   }
 
+  function showCoupon(value) {
+    const cfg = COUPONS[value];
+    if (!cfg) return;
+    const now = new Date();
+    const expiry = new Date(now.getTime() + cfg.days * 86400000);
+    const serial = genSerial();
+
+    couponPrize.textContent = cfg.prize;
+    couponSub.textContent = cfg.sub;
+    couponSerial.textContent = serial;
+    couponExpiry.textContent = fmtDate(expiry);
+
+    const list = loadCoupons();
+    list.unshift({
+      value, prize: cfg.prize, sub: cfg.sub,
+      serial, expiry: fmtDate(expiry), issued: fmtDate(now),
+    });
+    saveCoupons(list);
+
+    couponModal.classList.add("show");
+  }
+
   function step(direction) {
-    if (overlay.classList.contains("show") && !overlay.classList.contains("win")) return;
-    const moved = move(direction);
-    if (!moved) return;
+    if (couponModal.classList.contains("show") || listModal.classList.contains("show")) return;
+    if (overlay.classList.contains("show")) return;
+    const res = move(direction);
+    if (!res.moved) return;
     spawn();
     render();
-    if (won && !keepPlaying) {
-      overlayTitle.textContent = "你贏了！";
-      overlay.classList.add("show", "win");
-      overlayContinue.style.display = "";
-      return;
+
+    // 解鎖優惠券（每回合每階只解鎖一次）
+    if (res.milestones && res.milestones.length) {
+      for (const m of res.milestones) {
+        if (!unlocked.has(m)) {
+          unlocked.add(m);
+          // 延遲一下讓 spawn 動畫先跑完
+          setTimeout(() => showCoupon(m), 250);
+          break; // 一次只彈一張
+        }
+      }
     }
+
     if (!canMove()) {
-      overlayTitle.textContent = "遊戲結束！";
+      overlayTitle.textContent = "本回合結束";
+      overlayMsg.textContent = `本局得分 ${score} ・ 我的優惠券可重新查看`;
       overlay.classList.add("show");
-      overlay.classList.remove("win");
-      overlayContinue.style.display = "none";
     }
   }
 
-  // Keyboard
+  function renderCouponList() {
+    const list = loadCoupons();
+    if (!list.length) {
+      couponListEl.innerHTML = `<div class="empty">尚未獲得優惠券<br/>達成 512 / 1024 / 2048 即可解鎖</div>`;
+      return;
+    }
+    couponListEl.innerHTML = list.map((c) => `
+      <div class="coupon">
+        <div class="coupon-head">
+          <div class="logo-mini">
+            <img src="logo.png" alt="二熊"
+                 onerror="this.style.display='none'; this.parentElement.textContent='熊';" />
+          </div>
+          <div class="titles">
+            <div class="name">二熊</div>
+            <div class="sub">FUTAKUMA ・ 賀禮券</div>
+          </div>
+        </div>
+        <div class="coupon-body">
+          <div class="label">PRIZE</div>
+          <div class="prize">${c.prize}</div>
+          <div class="prize-sub">${c.sub}</div>
+          <div class="stamp">二熊<br/>之印</div>
+        </div>
+        <div class="coupon-foot">
+          <div class="row">編號<strong>${c.serial}</strong></div>
+          <div class="row right">有效期限<strong>${c.expiry}</strong></div>
+        </div>
+        <div class="coupon-terms">本券限二熊門市內用使用一次 ・ 不得與其他優惠並用</div>
+      </div>
+    `).join("");
+  }
+
+  // 鍵盤
   const keyMap = {
     ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down",
     a: "left", d: "right", w: "up", s: "down",
     A: "left", D: "right", W: "up", S: "down",
-    h: "left", l: "right", k: "up", j: "down",
   };
   window.addEventListener("keydown", (e) => {
     const dir = keyMap[e.key];
@@ -473,7 +915,7 @@
     step(dir);
   });
 
-  // Touch
+  // 觸控
   let touchStart = null;
   boardEl.addEventListener("touchstart", (e) => {
     if (e.touches.length !== 1) return;
@@ -494,10 +936,15 @@
 
   newGameBtn.addEventListener("click", reset);
   overlayRestart.addEventListener("click", reset);
-  overlayContinue.addEventListener("click", () => {
-    keepPlaying = true;
-    overlay.classList.remove("show", "win");
+  couponClose.addEventListener("click", () => couponModal.classList.remove("show"));
+  couponScreenshotHint.addEventListener("click", () => {
+    alert("請使用裝置截圖功能保存此優惠券，至門市出示即可。");
   });
+  myCouponsBtn.addEventListener("click", () => {
+    renderCouponList();
+    listModal.classList.add("show");
+  });
+  listClose.addEventListener("click", () => listModal.classList.remove("show"));
 
   best = loadBest();
   bestEl.textContent = best;
