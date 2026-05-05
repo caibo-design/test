@@ -193,15 +193,31 @@
     50% { transform: scale(1.18); }
     100% { transform: scale(1); }
   }
+  .tile .emoji {
+    font-size: clamp(24px, 8vw, 40px);
+    line-height: 1;
+    margin-bottom: 2px;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+  }
+  .tile .emoji-img {
+    width: clamp(30px, 9vw, 48px);
+    height: clamp(30px, 9vw, 48px);
+    object-fit: contain;
+    margin-bottom: 2px;
+    border-radius: 50%;
+    background: rgba(255, 248, 220, 0.95);
+    padding: 2px;
+    box-shadow: 0 0 0 1.5px rgba(0,0,0,0.15);
+  }
   .tile .name {
-    font-size: clamp(11px, 3.4vw, 17px);
+    font-size: clamp(10px, 2.8vw, 13px);
     letter-spacing: 1px;
   }
   .tile .num {
-    font-size: clamp(9px, 2.4vw, 12px);
+    font-size: clamp(8px, 1.9vw, 10px);
     font-family: "Helvetica Neue", Arial, sans-serif;
-    opacity: 0.65;
-    margin-top: 2px;
+    opacity: 0.6;
+    margin-top: 1px;
     font-weight: 500;
   }
 
@@ -571,6 +587,21 @@
     2048: "二熊極上",
   };
 
+  // 對應 emoji（2048 用 logo 圖）
+  const TILE_EMOJI = {
+    2: "🥢",
+    4: "🍚",
+    8: "🍙",
+    16: "🥚",
+    32: "🦐",
+    64: "🐟",
+    128: "🍣",
+    256: "🔥",
+    512: "🍱",
+    1024: "🐠",
+    2048: "logo",
+  };
+
   // 優惠券設定
   const COUPONS = {
     512:  { prize: "9 折優惠", sub: "達成 512 ・ 海膽軍艦", days: 30 },
@@ -698,7 +729,15 @@
         el.className = cls;
 
         const name = TILE_NAMES[t.value] || "極み";
-        el.innerHTML = `<div class="name">${name}</div><div class="num">${t.value}</div>`;
+        const emoji = TILE_EMOJI[t.value];
+        let visual;
+        if (emoji === "logo") {
+          visual = `<img class="emoji-img" src="logo.png" alt=""
+            onerror="this.outerHTML='<div class=\\'emoji\\'>🐻</div>'" />`;
+        } else {
+          visual = `<div class="emoji">${emoji || "✨"}</div>`;
+        }
+        el.innerHTML = `${visual}<div class="name">${name}</div><div class="num">${t.value}</div>`;
 
         const pct = (idx) => `calc((100% - 30px) / 4 * ${idx} + 10px * ${idx})`;
         el.style.left = pct(t.col);
