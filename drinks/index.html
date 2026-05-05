@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>DEMO 茶飲 ・ Bubble Lab 2048</title>
+<style>
+  :root {
+    --bg: #fff5ee;
+    --paper: #ffffff;
+    --board-bg: #6f4e37;
+    --cell-bg: #8b6f5a;
+    --text-dark: #4a3829;
+    --text-muted: #8a7264;
+    --text-light: #ffffff;
+    --accent: #ff6b9d;
+    --accent-dark: #d44875;
+    --cream: #fee9c8;
+    --gold: #f5b942;
+    --line: #f0d9c5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-dark);
+    font-family: "Nunito", "Quicksand", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 12px 40px;
+    user-select: none;
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(255,107,157,0.08), transparent 50%),
+      radial-gradient(circle at 80% 100%, rgba(245,185,66,0.10), transparent 50%);
+  }
+  .container { width: 100%; max-width: 480px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 30px;
+    box-shadow: 0 4px 12px rgba(255,107,157,0.3);
+  }
+  .brand { flex: 1; }
+  .brand h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    line-height: 1;
+    color: var(--text-dark);
+  }
+  .brand .tag {
+    font-size: 11px;
+    color: var(--accent-dark);
+    margin-top: 6px;
+    letter-spacing: 3px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .scores { display: flex; gap: 8px; margin-bottom: 12px; }
+  .score-box {
+    background: var(--paper);
+    border: 2px solid var(--text-dark);
+    color: var(--text-dark);
+    border-radius: 16px;
+    padding: 8px 14px;
+    text-align: center;
+    flex: 1;
+    box-shadow: 3px 3px 0 var(--text-dark);
+  }
+  .score-box .label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent-dark);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .score-box .value {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .toolbar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .btn {
+    background: var(--text-dark);
+    color: var(--text-light);
+    border: 2px solid var(--text-dark);
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.1s;
+    letter-spacing: 1px;
+    flex: 1;
+    font-family: inherit;
+    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 2px 0 var(--text-dark);
+  }
+  .btn:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--text-dark); }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--text-dark); }
+  .btn.accent { background: var(--accent); }
+  .btn.outline { background: var(--paper); color: var(--text-dark); }
+
+  .progress-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .progress-hint strong { color: var(--accent-dark); }
+
+  .board {
+    position: relative;
+    background: var(--board-bg);
+    border-radius: 18px;
+    padding: 10px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    touch-action: none;
+    box-shadow: 0 6px 0 #4a3829, 0 8px 24px rgba(74,56,41,0.25);
+    border: 2px solid var(--text-dark);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+  }
+  .cell { background: var(--cell-bg); border-radius: 12px; }
+  .tiles { position: absolute; inset: 10px; pointer-events: none; }
+  .tile {
+    position: absolute;
+    width: calc((100% - 30px) / 4);
+    height: calc((100% - 30px) / 4);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.1;
+    transition: transform 0.12s ease-in-out;
+    background: #eee4da;
+    color: var(--text-dark);
+    padding: 4px;
+    border: 1.5px solid rgba(74,56,41,0.2);
+  }
+  .tile.new { animation: appear 0.18s ease-in-out; }
+  .tile.merged { animation: pop 0.2s ease-in-out; }
+  @keyframes appear { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.18); } 100% { transform: scale(1); } }
+  .tile .emoji {
+    font-size: clamp(24px, 8vw, 40px);
+    line-height: 1;
+    margin-bottom: 2px;
+    height: clamp(30px, 8vw, 44px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+  }
+  .tile .emoji img.emoji { height: 100%; width: auto; }
+  .tile .name {
+    font-size: clamp(10px, 2.8vw, 13px);
+    letter-spacing: 0.5px;
+    font-weight: 800;
+  }
+  .tile .num {
+    font-size: clamp(8px, 1.9vw, 10px);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    opacity: 0.55;
+    margin-top: 1px;
+    font-weight: 600;
+  }
+
+  .tile-2    { background: #d4ecf0; color: #2d5a6b; }
+  .tile-4    { background: #c8d5b0; color: #3a4d2a; }
+  .tile-8    { background: #b8dde8; color: #2d5a6b; }
+  .tile-16   { background: #f8eed5; color: #6b5237; }
+  .tile-32   { background: #f5d96a; color: #6b5237; }
+  .tile-64   { background: #4a3829; color: #fee9c8; }
+  .tile-128  { background: #f5e056; color: #6b5237; }
+  .tile-256  { background: #f5a0a0; color: #fff; }
+  .tile-512  { background: #fee9c8; color: #4a3829; box-shadow: inset 0 0 0 2px #f5b942; }
+  .tile-1024 { background: #c9a07f; color: #fff; box-shadow: inset 0 0 0 2px #6f4e37; }
+  .tile-2048 { background: #ff6b9d; color: #fff; box-shadow: inset 0 0 0 2px #f5b942, 0 0 16px rgba(255,107,157,0.6); }
+  .tile-super { background: #d44875; color: #fee9c8; box-shadow: inset 0 0 0 2px #f5b942; }
+
+  .overlay {
+    position: absolute; inset: 0;
+    background: rgba(255,245,238, 0.95);
+    border-radius: 18px;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 20;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .overlay h2 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    color: var(--accent-dark);
+    font-weight: 800;
+  }
+  .overlay p { color: var(--text-muted); margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+  .overlay .actions { display: flex; gap: 8px; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(74,56,41,0.55);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: transparent;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .coupon {
+    width: 100%;
+    background: var(--paper);
+    border: 2.5px solid var(--text-dark);
+    border-radius: 16px;
+    padding: 24px 20px 20px;
+    position: relative;
+    box-shadow: 4px 4px 0 var(--text-dark), 0 8px 32px rgba(74,56,41,0.25);
+  }
+  .coupon::before, .coupon::after {
+    content: "";
+    position: absolute;
+    width: 16px; height: 16px;
+    background: var(--bg);
+    border: 2.5px solid var(--text-dark);
+    border-radius: 50%;
+    top: 50%; transform: translateY(-50%);
+  }
+  .coupon::before { left: -10px; }
+  .coupon::after { right: -10px; }
+  .coupon-head {
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 2px dashed var(--line);
+    padding-bottom: 12px; margin-bottom: 14px;
+  }
+  .coupon-head .logo-mini {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--accent); color: white;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 22px;
+  }
+  .coupon-head .titles { flex: 1; text-align: left; }
+  .coupon-head .titles .name {
+    font-size: 18px; font-weight: 800;
+    letter-spacing: 1px;
+  }
+  .coupon-head .titles .sub {
+    font-size: 10px; color: var(--text-muted);
+    letter-spacing: 2px; margin-top: 2px;
+    font-weight: 700; text-transform: uppercase;
+  }
+  .coupon-body { text-align: center; padding: 8px 0 14px; position: relative; }
+  .coupon-body .label {
+    font-size: 11px; color: var(--text-muted);
+    letter-spacing: 4px; margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .coupon-body .prize {
+    font-size: 28px; font-weight: 900;
+    color: var(--accent-dark);
+    letter-spacing: 1px; line-height: 1.2;
+  }
+  .coupon-body .prize-sub {
+    font-size: 13px; color: var(--text-dark);
+    margin-top: 6px; letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .stamp {
+    position: absolute;
+    right: 4px; bottom: -6px;
+    width: 64px; height: 64px;
+    border: 3px solid var(--accent);
+    border-radius: 50%;
+    color: var(--accent-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900;
+    transform: rotate(-12deg);
+    background: rgba(255,255,255, 0.6);
+    line-height: 1.1; text-align: center; padding: 4px;
+  }
+  .coupon-foot {
+    border-top: 2px dashed var(--line);
+    padding-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  .coupon-foot .row { text-align: left; }
+  .coupon-foot .row.right { text-align: right; }
+  .coupon-foot .row strong {
+    display: block;
+    color: var(--text-dark);
+    font-weight: 800;
+    margin-top: 2px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 1px;
+  }
+  .coupon-terms {
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    text-align: center;
+    font-weight: 600;
+  }
+  .modal-actions { display: flex; gap: 8px; width: 100%; }
+  .modal-actions .btn { flex: 1; }
+
+  .coupon-list .coupon { transform: scale(0.95); margin-bottom: 8px; }
+  .coupon-list-wrap {
+    width: 100%; max-width: 380px;
+    background: var(--paper);
+    border: 2px solid var(--text-dark);
+    border-radius: 16px;
+    padding: 16px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .coupon-list-wrap h3 {
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent-dark);
+  }
+  .empty { text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 13px; font-weight: 600; }
+
+  footer {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  footer .line { height: 2px; background: var(--line); margin: 8px 30px; border-radius: 2px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">🧋</div>
+      <div class="brand">
+        <h1>DEMO 茶飲</h1>
+        <div class="tag">Bubble Lab ・ 2048</div>
+      </div>
+    </header>
+
+    <div class="scores">
+      <div class="score-box">
+        <div class="label">分數</div>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="label">最高</div>
+        <div class="value" id="best">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn outline" href="../">← 主題</a>
+      <button class="btn outline" id="my-coupons">我的優惠券</button>
+      <button class="btn accent" id="new-game">新遊戲</button>
+    </div>
+
+    <div class="progress-hint">合併食材 → 解鎖 <strong>DEMO 茶飲</strong> 限定優惠</div>
+
+    <div class="board" id="board">
+      <div class="grid" id="grid"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="overlay" id="overlay">
+        <h2 id="overlay-title">材料用完啦</h2>
+        <p id="overlay-msg">本回合食材已用盡</p>
+        <div class="actions">
+          <button class="btn accent" id="overlay-restart">再來一杯</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div>方向鍵 ↑ ↓ ← → 移動 ・ 手機請於棋盤上滑動</div>
+      <div class="line"></div>
+      <div>達 512 / 1024 / 2048 解鎖優惠券，截圖至門市出示即可</div>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="coupon-modal">
+    <div class="modal">
+      <div class="coupon" id="coupon-card">
+        <div class="coupon-head">
+          <div class="logo-mini">🧋</div>
+          <div class="titles">
+            <div class="name">DEMO 茶飲</div>
+            <div class="sub">BUBBLE COUPON ・ 飲品券</div>
+          </div>
+        </div>
+        <div class="coupon-body">
+          <div class="label">PRIZE</div>
+          <div class="prize" id="coupon-prize">第二杯半價</div>
+          <div class="prize-sub" id="coupon-sub">達成 512 ・ 奶蓋</div>
+          <div class="stamp">DEMO<br/>限定</div>
+        </div>
+        <div class="coupon-foot">
+          <div class="row">編號<strong id="coupon-serial">DR-00000000</strong></div>
+          <div class="row right">有效期限<strong id="coupon-expiry">2026/06/04</strong></div>
+        </div>
+        <div class="coupon-terms">
+          本券限門市內使用一次 ・ 不得與其他優惠並用 ・ 請於有效期內出示截圖
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn outline" id="coupon-close">繼續遊戲</button>
+        <button class="btn accent" id="coupon-screenshot-hint">截圖保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="list-modal">
+    <div class="coupon-list-wrap">
+      <h3>我的優惠券</h3>
+      <div class="coupon-list" id="coupon-list"></div>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button class="btn outline" id="list-close">關閉</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@v15.1.0/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<script>
+(function () {
+  const SIZE = 4;
+  const STORAGE_KEY = "demo-drinks-2048-best";
+  const COUPON_KEY = "demo-drinks-2048-coupons";
+
+  const TILE_NAMES = {
+    2: "水", 4: "茶葉", 8: "冰塊", 16: "牛奶",
+    32: "糖", 64: "珍珠", 128: "檸檬", 256: "草莓",
+    512: "奶蓋", 1024: "招牌奶茶", 2048: "招牌大杯",
+  };
+  const TILE_EMOJI = {
+    2: "💧", 4: "🍃", 8: "🧊", 16: "🥛",
+    32: "🍯", 64: "⚫", 128: "🍋", 256: "🍓",
+    512: "☁️", 1024: "🧋", 2048: "🏆",
+  };
+  const COUPONS = {
+    512:  { prize: "第二杯半價", sub: "達成 512 ・ 奶蓋", days: 30 },
+    1024: { prize: "中杯升級大杯免費", sub: "達成 1024 ・ 招牌奶茶", days: 30 },
+    2048: { prize: "招牌系列任一杯免費 ＋ 加料免費", sub: "達成 2048 ・ 招牌大杯", days: 60 },
+  };
+  const SERIAL_PREFIX = "DR";
+
+  const gridEl = document.getElementById("grid");
+  const tilesEl = document.getElementById("tiles");
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlay-title");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const overlayRestart = document.getElementById("overlay-restart");
+  const newGameBtn = document.getElementById("new-game");
+  const myCouponsBtn = document.getElementById("my-coupons");
+  const boardEl = document.getElementById("board");
+  const couponModal = document.getElementById("coupon-modal");
+  const couponPrize = document.getElementById("coupon-prize");
+  const couponSub = document.getElementById("coupon-sub");
+  const couponSerial = document.getElementById("coupon-serial");
+  const couponExpiry = document.getElementById("coupon-expiry");
+  const couponClose = document.getElementById("coupon-close");
+  const couponScreenshotHint = document.getElementById("coupon-screenshot-hint");
+  const listModal = document.getElementById("list-modal");
+  const couponListEl = document.getElementById("coupon-list");
+  const listClose = document.getElementById("list-close");
+
+  let board, score, best, tileId, unlocked;
+
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const c = document.createElement("div");
+    c.className = "cell";
+    gridEl.appendChild(c);
+  }
+
+  function loadBest() { const v = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10); return isNaN(v) ? 0 : v; }
+  function saveBest() { try { localStorage.setItem(STORAGE_KEY, String(best)); } catch (e) {} }
+  function loadCoupons() { try { return JSON.parse(localStorage.getItem(COUPON_KEY) || "[]"); } catch (e) { return []; } }
+  function saveCoupons(list) { try { localStorage.setItem(COUPON_KEY, JSON.stringify(list)); } catch (e) {} }
+  function fmtDate(d) { return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`; }
+  function genSerial() {
+    const ts = Date.now().toString(36).toUpperCase().slice(-6);
+    const rnd = Math.floor(Math.random() * 0xff).toString(16).toUpperCase().padStart(2, "0");
+    return `${SERIAL_PREFIX}-${ts}${rnd}`;
+  }
+  function emptyBoard() { return Array.from({ length: SIZE }, () => Array(SIZE).fill(null)); }
+  function emptyCells() {
+    const list = [];
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (!board[r][c]) list.push([r, c]);
+    return list;
+  }
+  function spawn() {
+    const empties = emptyCells();
+    if (!empties.length) return;
+    const [r, c] = empties[Math.floor(Math.random() * empties.length)];
+    board[r][c] = { id: ++tileId, value: Math.random() < 0.9 ? 2 : 4, row: r, col: c, isNew: true, merged: false };
+  }
+  function reset() {
+    board = emptyBoard(); score = 0; tileId = 0; unlocked = new Set();
+    spawn(); spawn();
+    overlay.classList.remove("show");
+    render();
+  }
+  function tileClass(v) { return v <= 2048 ? "tile-" + v : "tile-super"; }
+
+  function render() {
+    tilesEl.innerHTML = "";
+    const seen = new Set();
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const t = board[r][c];
+        if (!t || seen.has(t.id)) continue;
+        seen.add(t.id);
+        const el = document.createElement("div");
+        let cls = "tile " + tileClass(t.value);
+        if (t.isNew) cls += " new";
+        if (t.merged) cls += " merged";
+        el.className = cls;
+        const name = TILE_NAMES[t.value] || "極み";
+        const emoji = TILE_EMOJI[t.value] || "✨";
+        el.innerHTML = `<div class="emoji">${emoji}</div><div class="name">${name}</div><div class="num">${t.value}</div>`;
+        const pct = (idx) => `calc((100% - 30px) / 4 * ${idx} + 10px * ${idx})`;
+        el.style.left = pct(t.col);
+        el.style.top = pct(t.row);
+        tilesEl.appendChild(el);
+        t.isNew = false;
+        t.merged = false;
+      }
+    }
+    scoreEl.textContent = score;
+    if (score > best) { best = score; saveBest(); }
+    bestEl.textContent = best;
+    if (window.twemoji) twemoji.parse(tilesEl, { folder: "svg", ext: ".svg" });
+  }
+
+  function clone(b) { return b.map((row) => row.map((t) => (t ? { ...t } : null))); }
+  function sameBoardState(a, b) {
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      const x = a[r][c], y = b[r][c];
+      if (!x && !y) continue;
+      if (!x || !y) return false;
+      if (x.value !== y.value) return false;
+    }
+    return true;
+  }
+  function rotateCW(b) { const n = SIZE, r = emptyBoard(); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) r[j][n-1-i] = b[i][j]; return r; }
+  function rotateCCW(b) { const n = SIZE, r = emptyBoard(); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) r[n-1-j][i] = b[i][j]; return r; }
+  function flipH(b) { return b.map((row) => row.slice().reverse()); }
+
+  function slideRowLeft(row) {
+    const filtered = row.filter((t) => t);
+    const out = [];
+    let gained = 0;
+    let reachedMilestones = [];
+    for (let i = 0; i < filtered.length; i++) {
+      const cur = filtered[i];
+      const next = filtered[i + 1];
+      if (next && cur.value === next.value) {
+        const merged = { id: ++tileId, value: cur.value * 2, merged: true, isNew: false };
+        out.push(merged);
+        gained += merged.value;
+        if (COUPONS[merged.value]) reachedMilestones.push(merged.value);
+        i++;
+      } else { out.push(cur); }
+    }
+    while (out.length < SIZE) out.push(null);
+    return { row: out, gained, reachedMilestones };
+  }
+  function moveLeft(b) {
+    let gained = 0; const milestones = [];
+    const newBoard = b.map((row) => {
+      const r = slideRowLeft(row);
+      gained += r.gained;
+      milestones.push(...r.reachedMilestones);
+      return r.row;
+    });
+    return { board: newBoard, gained, milestones };
+  }
+  function move(direction) {
+    let working = clone(board);
+    if (direction === "right") working = flipH(working);
+    else if (direction === "up") working = rotateCCW(working);
+    else if (direction === "down") working = rotateCW(working);
+    const { board: moved, gained, milestones } = moveLeft(working);
+    let result = moved;
+    if (direction === "right") result = flipH(result);
+    else if (direction === "up") result = rotateCW(result);
+    else if (direction === "down") result = rotateCCW(result);
+    if (sameBoardState(board, result)) return { moved: false };
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      if (result[r][c]) { result[r][c].row = r; result[r][c].col = c; }
+    }
+    board = result;
+    score += gained;
+    return { moved: true, milestones };
+  }
+  function canMove() {
+    if (emptyCells().length) return true;
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      const v = board[r][c].value;
+      if (r + 1 < SIZE && board[r + 1][c].value === v) return true;
+      if (c + 1 < SIZE && board[r][c + 1].value === v) return true;
+    }
+    return false;
+  }
+  function showCoupon(value) {
+    const cfg = COUPONS[value]; if (!cfg) return;
+    const now = new Date();
+    const expiry = new Date(now.getTime() + cfg.days * 86400000);
+    const serial = genSerial();
+    couponPrize.textContent = cfg.prize;
+    couponSub.textContent = cfg.sub;
+    couponSerial.textContent = serial;
+    couponExpiry.textContent = fmtDate(expiry);
+    const list = loadCoupons();
+    list.unshift({ value, prize: cfg.prize, sub: cfg.sub, serial, expiry: fmtDate(expiry), issued: fmtDate(now) });
+    saveCoupons(list);
+    couponModal.classList.add("show");
+  }
+  function step(direction) {
+    if (couponModal.classList.contains("show") || listModal.classList.contains("show")) return;
+    if (overlay.classList.contains("show")) return;
+    const res = move(direction);
+    if (!res.moved) return;
+    spawn(); render();
+    if (res.milestones && res.milestones.length) {
+      for (const m of res.milestones) {
+        if (!unlocked.has(m)) {
+          unlocked.add(m);
+          setTimeout(() => showCoupon(m), 250);
+          break;
+        }
+      }
+    }
+    if (!canMove()) {
+      overlayTitle.textContent = "材料用完啦";
+      overlayMsg.textContent = `本局得分 ${score} ・ 我的優惠券可重新查看`;
+      overlay.classList.add("show");
+    }
+  }
+  function renderCouponList() {
+    const list = loadCoupons();
+    if (!list.length) {
+      couponListEl.innerHTML = `<div class="empty">尚未獲得優惠券<br/>達成 512 / 1024 / 2048 即可解鎖</div>`;
+      return;
+    }
+    couponListEl.innerHTML = list.map((c) => `
+      <div class="coupon">
+        <div class="coupon-head">
+          <div class="logo-mini">🧋</div>
+          <div class="titles">
+            <div class="name">DEMO 茶飲</div>
+            <div class="sub">BUBBLE COUPON ・ 飲品券</div>
+          </div>
+        </div>
+        <div class="coupon-body">
+          <div class="label">PRIZE</div>
+          <div class="prize">${c.prize}</div>
+          <div class="prize-sub">${c.sub}</div>
+          <div class="stamp">DEMO<br/>限定</div>
+        </div>
+        <div class="coupon-foot">
+          <div class="row">編號<strong>${c.serial}</strong></div>
+          <div class="row right">有效期限<strong>${c.expiry}</strong></div>
+        </div>
+        <div class="coupon-terms">本券限門市內使用一次 ・ 不得與其他優惠並用</div>
+      </div>
+    `).join("");
+  }
+
+  const keyMap = { ArrowLeft:"left", ArrowRight:"right", ArrowUp:"up", ArrowDown:"down", a:"left", d:"right", w:"up", s:"down", A:"left", D:"right", W:"up", S:"down" };
+  window.addEventListener("keydown", (e) => {
+    const dir = keyMap[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    step(dir);
+  });
+  let touchStart = null;
+  boardEl.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  boardEl.addEventListener("touchend", (e) => {
+    if (!touchStart) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
+    touchStart = null;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    if (Math.max(absX, absY) < 24) return;
+    if (absX > absY) step(dx > 0 ? "right" : "left");
+    else step(dy > 0 ? "down" : "up");
+  }, { passive: true });
+
+  newGameBtn.addEventListener("click", reset);
+  overlayRestart.addEventListener("click", reset);
+  couponClose.addEventListener("click", () => couponModal.classList.remove("show"));
+  couponScreenshotHint.addEventListener("click", () => alert("請使用裝置截圖功能保存此優惠券，至門市出示即可。"));
+  myCouponsBtn.addEventListener("click", () => { renderCouponList(); listModal.classList.add("show"); if (window.twemoji) twemoji.parse(couponListEl); });
+  listClose.addEventListener("click", () => listModal.classList.remove("show"));
+
+  best = loadBest();
+  bestEl.textContent = best;
+  reset();
+  if (window.twemoji) twemoji.parse(document.body);
+})();
+</script>
+</body>
+</html>
