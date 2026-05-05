@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>DEMO 健身 ・ Beast Mode 2048</title>
+<style>
+  :root {
+    --bg: #0e1014;
+    --paper: #1a1d23;
+    --board-bg: #06080b;
+    --cell-bg: #1a1d23;
+    --text-dark: #f5f5f5;
+    --text-muted: #7d818a;
+    --text-light: #ffffff;
+    --accent: #ff3b3b;
+    --accent-dark: #cc2929;
+    --gold: #ffaa00;
+    --line: #2a2d34;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-dark);
+    font-family: "Helvetica Neue Condensed", "Helvetica Neue", "Arial Narrow", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 12px 40px;
+    user-select: none;
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(255,59,59,0.10), transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(255,170,0,0.06), transparent 50%);
+  }
+  .container { width: 100%; max-width: 480px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 28px;
+    transform: rotate(-3deg);
+    box-shadow: 0 0 20px rgba(255,59,59,0.4);
+  }
+  .brand { flex: 1; }
+  .brand h1 {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    line-height: 1;
+    color: var(--text-light);
+    text-transform: uppercase;
+  }
+  .brand .tag {
+    font-size: 11px;
+    color: var(--accent);
+    margin-top: 6px;
+    letter-spacing: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .scores { display: flex; gap: 8px; margin-bottom: 12px; }
+  .score-box {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    color: var(--text-light);
+    border-radius: 4px;
+    padding: 8px 14px;
+    text-align: center;
+    flex: 1;
+  }
+  .score-box .label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .score-box .value {
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.2;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .toolbar { display: flex; gap: 8px; margin-bottom: 14px; }
+  .btn {
+    background: var(--accent);
+    color: var(--text-light);
+    border: none;
+    border-radius: 4px;
+    padding: 11px 14px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 3px;
+    flex: 1;
+    font-family: inherit;
+    text-align: center;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+  }
+  .btn:hover { background: var(--accent-dark); }
+  .btn:active { transform: translateY(1px); }
+  .btn.outline {
+    background: transparent;
+    color: var(--text-light);
+    border: 1.5px solid var(--line);
+  }
+  .btn.outline:hover { background: var(--paper); border-color: var(--accent); }
+
+  .progress-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-align: center;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .progress-hint strong { color: var(--accent); }
+
+  .board {
+    position: relative;
+    background: var(--board-bg);
+    border-radius: 4px;
+    padding: 10px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    touch-action: none;
+    box-shadow: 0 0 0 1px var(--line), 0 6px 24px rgba(255,59,59,0.15);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+  }
+  .cell { background: var(--cell-bg); border-radius: 2px; }
+  .tiles { position: absolute; inset: 10px; pointer-events: none; }
+  .tile {
+    position: absolute;
+    width: calc((100% - 30px) / 4);
+    height: calc((100% - 30px) / 4);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.1;
+    transition: transform 0.12s ease-in-out;
+    background: #2a2d34;
+    color: var(--text-light);
+    padding: 4px;
+  }
+  .tile.new { animation: appear 0.18s ease-in-out; }
+  .tile.merged { animation: pop 0.2s ease-in-out; }
+  @keyframes appear { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.18); } 100% { transform: scale(1); } }
+  .tile .emoji {
+    font-size: clamp(24px, 8vw, 40px);
+    line-height: 1;
+    margin-bottom: 2px;
+    height: clamp(30px, 8vw, 44px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  }
+  .tile .emoji img.emoji { height: 100%; width: auto; }
+  .tile .name {
+    font-size: clamp(10px, 2.6vw, 12px);
+    letter-spacing: 1px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+  .tile .num {
+    font-size: clamp(8px, 1.9vw, 10px);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    opacity: 0.6;
+    margin-top: 1px;
+    font-weight: 600;
+  }
+
+  .tile-2    { background: #2d4a5a; color: #b8d8e8; }
+  .tile-4    { background: #6e2d2a; color: #fff; }
+  .tile-8    { background: #d97706; color: #fff; }
+  .tile-16   { background: #4a5563; color: #fff; }
+  .tile-32   { background: #dc2626; color: #fff; }
+  .tile-64   { background: #ea580c; color: #fff; }
+  .tile-128  { background: #ca8a04; color: #1a1300; }
+  .tile-256  { background: #6b46c1; color: #fff; }
+  .tile-512  { background: #ff5722; color: #fff; box-shadow: inset 0 0 0 2px #ffaa00; }
+  .tile-1024 { background: #ffaa00; color: #1a1300; box-shadow: inset 0 0 0 2px #fff; }
+  .tile-2048 { background: #ff3b3b; color: #fff; box-shadow: inset 0 0 0 2px #ffaa00, 0 0 18px rgba(255,59,59,0.6); }
+  .tile-super { background: #1a1d23; color: #ff3b3b; box-shadow: inset 0 0 0 2px #ff3b3b; }
+
+  .overlay {
+    position: absolute; inset: 0;
+    background: rgba(14,16,20, 0.94);
+    border-radius: 4px;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 20;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .overlay h2 {
+    font-size: 36px;
+    margin-bottom: 8px;
+    letter-spacing: 6px;
+    color: var(--accent);
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+  .overlay p { color: var(--text-muted); margin-bottom: 16px; font-size: 13px; letter-spacing: 2px; }
+  .overlay .actions { display: flex; gap: 8px; }
+
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: transparent;
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .coupon {
+    width: 100%;
+    background: var(--paper);
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    padding: 24px 20px 20px;
+    position: relative;
+    box-shadow: 0 0 24px rgba(255,59,59,0.3), 0 8px 32px rgba(0,0,0,0.6);
+    color: var(--text-light);
+  }
+  .coupon::before, .coupon::after {
+    content: "";
+    position: absolute;
+    width: 14px; height: 14px;
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    top: 50%; transform: translateY(-50%);
+  }
+  .coupon::before { left: -8px; }
+  .coupon::after { right: -8px; }
+  .coupon-head {
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px; margin-bottom: 14px;
+  }
+  .coupon-head .logo-mini {
+    width: 44px; height: 44px;
+    border-radius: 4px;
+    background: var(--accent); color: white;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 22px;
+  }
+  .coupon-head .titles { flex: 1; text-align: left; }
+  .coupon-head .titles .name {
+    font-size: 18px; font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .coupon-head .titles .sub {
+    font-size: 10px; color: var(--text-muted);
+    letter-spacing: 3px; margin-top: 2px;
+    font-weight: 700; text-transform: uppercase;
+  }
+  .coupon-body { text-align: center; padding: 8px 0 14px; position: relative; }
+  .coupon-body .label {
+    font-size: 11px; color: var(--text-muted);
+    letter-spacing: 6px; margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .coupon-body .prize {
+    font-size: 28px; font-weight: 900;
+    color: var(--accent);
+    letter-spacing: 2px; line-height: 1.2;
+    text-transform: uppercase;
+  }
+  .coupon-body .prize-sub {
+    font-size: 13px; color: var(--text-light);
+    margin-top: 6px; letter-spacing: 2px;
+    font-weight: 700;
+  }
+  .stamp {
+    position: absolute;
+    right: 4px; bottom: -10px;
+    width: 70px; height: 60px;
+    border: 3px solid var(--gold);
+    border-radius: 4px;
+    color: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900;
+    transform: rotate(-12deg);
+    background: rgba(255,170,0, 0.08);
+    line-height: 1.1; text-align: center; padding: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .coupon-foot {
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .coupon-foot .row { text-align: left; }
+  .coupon-foot .row.right { text-align: right; }
+  .coupon-foot .row strong {
+    display: block;
+    color: var(--text-light);
+    font-weight: 800;
+    margin-top: 2px;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 1px;
+    text-transform: none;
+  }
+  .coupon-terms {
+    margin-top: 10px;
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .modal-actions { display: flex; gap: 8px; width: 100%; }
+  .modal-actions .btn { flex: 1; }
+
+  .coupon-list .coupon { transform: scale(0.95); margin-bottom: 8px; }
+  .coupon-list-wrap {
+    width: 100%; max-width: 380px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .coupon-list-wrap h3 {
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 6px;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .empty { text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 13px; letter-spacing: 1px; }
+
+  footer {
+    margin-top: 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.7;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  footer .line { height: 1px; background: var(--line); margin: 8px 30px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">🥊</div>
+      <div class="brand">
+        <h1>DEMO Gym</h1>
+        <div class="tag">Beast Mode ・ 2048</div>
+      </div>
+    </header>
+
+    <div class="scores">
+      <div class="score-box">
+        <div class="label">Score</div>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <div class="label">Best</div>
+        <div class="value" id="best">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn outline" href="../">← Themes</a>
+      <button class="btn outline" id="my-coupons">My Coupons</button>
+      <button class="btn" id="new-game">New</button>
+    </div>
+
+    <div class="progress-hint">合併訓練 → 解鎖 <strong>DEMO 健身</strong> 限定優惠</div>
+
+    <div class="board" id="board">
+      <div class="grid" id="grid"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="overlay" id="overlay">
+        <h2 id="overlay-title">No More Reps</h2>
+        <p id="overlay-msg">本回合已用盡 ・ 重新挑戰</p>
+        <div class="actions">
+          <button class="btn" id="overlay-restart">Restart</button>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div>方向鍵 ↑ ↓ ← → 移動 ・ 手機請於棋盤上滑動</div>
+      <div class="line"></div>
+      <div>達 512 / 1024 / 2048 解鎖優惠券，截圖至門市出示</div>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="coupon-modal">
+    <div class="modal">
+      <div class="coupon" id="coupon-card">
+        <div class="coupon-head">
+          <div class="logo-mini">🥊</div>
+          <div class="titles">
+            <div class="name">DEMO Gym</div>
+            <div class="sub">Beast Mode ・ Voucher</div>
+          </div>
+        </div>
+        <div class="coupon-body">
+          <div class="label">PRIZE</div>
+          <div class="prize" id="coupon-prize">體驗券</div>
+          <div class="prize-sub" id="coupon-sub">達成 512 ・ 體能訓練</div>
+          <div class="stamp">DEMO<br/>OFFICIAL</div>
+        </div>
+        <div class="coupon-foot">
+          <div class="row">編號<strong id="coupon-serial">GM-00000000</strong></div>
+          <div class="row right">有效期限<strong id="coupon-expiry">2026/06/04</strong></div>
+        </div>
+        <div class="coupon-terms">
+          本券限門市使用一次 ・ 不得與其他優惠並用 ・ 請於有效期內出示截圖
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn outline" id="coupon-close">Continue</button>
+        <button class="btn" id="coupon-screenshot-hint">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="list-modal">
+    <div class="coupon-list-wrap">
+      <h3>My Coupons</h3>
+      <div class="coupon-list" id="coupon-list"></div>
+      <div class="modal-actions" style="margin-top:12px;">
+        <button class="btn outline" id="list-close">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@v15.1.0/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<script>
+(function () {
+  const SIZE = 4;
+  const STORAGE_KEY = "demo-gym-2048-best";
+  const COUPON_KEY = "demo-gym-2048-coupons";
+
+  const TILE_NAMES = {
+    2: "礦泉水", 4: "蘋果", 8: "跳繩", 16: "啞鈴",
+    32: "拳套", 64: "跑步", 128: "健身車", 256: "瑜伽",
+    512: "體能訓練", 1024: "教練諮詢", 2048: "VIP 會籍",
+  };
+  const TILE_EMOJI = {
+    2: "💧", 4: "🍎", 8: "🪢", 16: "🏋️",
+    32: "🥊", 64: "🏃", 128: "🚴", 256: "🧘",
+    512: "🤸", 1024: "💪", 2048: "🏆",
+  };
+  const COUPONS = {
+    512:  { prize: "免費體驗券", sub: "達成 512 ・ 體能訓練", days: 30 },
+    1024: { prize: "個人教練諮詢一次", sub: "達成 1024 ・ 教練諮詢", days: 30 },
+    2048: { prize: "月費 8 折 ＋ 體驗課程兩堂", sub: "達成 2048 ・ VIP 會籍", days: 60 },
+  };
+  const SERIAL_PREFIX = "GM";
+
+  const gridEl = document.getElementById("grid");
+  const tilesEl = document.getElementById("tiles");
+  const scoreEl = document.getElementById("score");
+  const bestEl = document.getElementById("best");
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlay-title");
+  const overlayMsg = document.getElementById("overlay-msg");
+  const overlayRestart = document.getElementById("overlay-restart");
+  const newGameBtn = document.getElementById("new-game");
+  const myCouponsBtn = document.getElementById("my-coupons");
+  const boardEl = document.getElementById("board");
+  const couponModal = document.getElementById("coupon-modal");
+  const couponPrize = document.getElementById("coupon-prize");
+  const couponSub = document.getElementById("coupon-sub");
+  const couponSerial = document.getElementById("coupon-serial");
+  const couponExpiry = document.getElementById("coupon-expiry");
+  const couponClose = document.getElementById("coupon-close");
+  const couponScreenshotHint = document.getElementById("coupon-screenshot-hint");
+  const listModal = document.getElementById("list-modal");
+  const couponListEl = document.getElementById("coupon-list");
+  const listClose = document.getElementById("list-close");
+
+  let board, score, best, tileId, unlocked;
+
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const c = document.createElement("div");
+    c.className = "cell";
+    gridEl.appendChild(c);
+  }
+
+  function loadBest() { const v = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10); return isNaN(v) ? 0 : v; }
+  function saveBest() { try { localStorage.setItem(STORAGE_KEY, String(best)); } catch (e) {} }
+  function loadCoupons() { try { return JSON.parse(localStorage.getItem(COUPON_KEY) || "[]"); } catch (e) { return []; } }
+  function saveCoupons(list) { try { localStorage.setItem(COUPON_KEY, JSON.stringify(list)); } catch (e) {} }
+  function fmtDate(d) { return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`; }
+  function genSerial() {
+    const ts = Date.now().toString(36).toUpperCase().slice(-6);
+    const rnd = Math.floor(Math.random() * 0xff).toString(16).toUpperCase().padStart(2, "0");
+    return `${SERIAL_PREFIX}-${ts}${rnd}`;
+  }
+  function emptyBoard() { return Array.from({ length: SIZE }, () => Array(SIZE).fill(null)); }
+  function emptyCells() {
+    const list = [];
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) if (!board[r][c]) list.push([r, c]);
+    return list;
+  }
+  function spawn() {
+    const empties = emptyCells();
+    if (!empties.length) return;
+    const [r, c] = empties[Math.floor(Math.random() * empties.length)];
+    board[r][c] = { id: ++tileId, value: Math.random() < 0.9 ? 2 : 4, row: r, col: c, isNew: true, merged: false };
+  }
+  function reset() {
+    board = emptyBoard(); score = 0; tileId = 0; unlocked = new Set();
+    spawn(); spawn();
+    overlay.classList.remove("show");
+    render();
+  }
+  function tileClass(v) { return v <= 2048 ? "tile-" + v : "tile-super"; }
+
+  function render() {
+    tilesEl.innerHTML = "";
+    const seen = new Set();
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        const t = board[r][c];
+        if (!t || seen.has(t.id)) continue;
+        seen.add(t.id);
+        const el = document.createElement("div");
+        let cls = "tile " + tileClass(t.value);
+        if (t.isNew) cls += " new";
+        if (t.merged) cls += " merged";
+        el.className = cls;
+        const name = TILE_NAMES[t.value] || "極み";
+        const emoji = TILE_EMOJI[t.value] || "✨";
+        el.innerHTML = `<div class="emoji">${emoji}</div><div class="name">${name}</div><div class="num">${t.value}</div>`;
+        const pct = (idx) => `calc((100% - 30px) / 4 * ${idx} + 10px * ${idx})`;
+        el.style.left = pct(t.col);
+        el.style.top = pct(t.row);
+        tilesEl.appendChild(el);
+        t.isNew = false;
+        t.merged = false;
+      }
+    }
+    scoreEl.textContent = score;
+    if (score > best) { best = score; saveBest(); }
+    bestEl.textContent = best;
+    if (window.twemoji) twemoji.parse(tilesEl, { folder: "svg", ext: ".svg" });
+  }
+
+  function clone(b) { return b.map((row) => row.map((t) => (t ? { ...t } : null))); }
+  function sameBoardState(a, b) {
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      const x = a[r][c], y = b[r][c];
+      if (!x && !y) continue;
+      if (!x || !y) return false;
+      if (x.value !== y.value) return false;
+    }
+    return true;
+  }
+  function rotateCW(b) { const n = SIZE, r = emptyBoard(); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) r[j][n-1-i] = b[i][j]; return r; }
+  function rotateCCW(b) { const n = SIZE, r = emptyBoard(); for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) r[n-1-j][i] = b[i][j]; return r; }
+  function flipH(b) { return b.map((row) => row.slice().reverse()); }
+
+  function slideRowLeft(row) {
+    const filtered = row.filter((t) => t);
+    const out = [];
+    let gained = 0;
+    let reachedMilestones = [];
+    for (let i = 0; i < filtered.length; i++) {
+      const cur = filtered[i];
+      const next = filtered[i + 1];
+      if (next && cur.value === next.value) {
+        const merged = { id: ++tileId, value: cur.value * 2, merged: true, isNew: false };
+        out.push(merged);
+        gained += merged.value;
+        if (COUPONS[merged.value]) reachedMilestones.push(merged.value);
+        i++;
+      } else { out.push(cur); }
+    }
+    while (out.length < SIZE) out.push(null);
+    return { row: out, gained, reachedMilestones };
+  }
+  function moveLeft(b) {
+    let gained = 0; const milestones = [];
+    const newBoard = b.map((row) => {
+      const r = slideRowLeft(row);
+      gained += r.gained;
+      milestones.push(...r.reachedMilestones);
+      return r.row;
+    });
+    return { board: newBoard, gained, milestones };
+  }
+  function move(direction) {
+    let working = clone(board);
+    if (direction === "right") working = flipH(working);
+    else if (direction === "up") working = rotateCCW(working);
+    else if (direction === "down") working = rotateCW(working);
+    const { board: moved, gained, milestones } = moveLeft(working);
+    let result = moved;
+    if (direction === "right") result = flipH(result);
+    else if (direction === "up") result = rotateCW(result);
+    else if (direction === "down") result = rotateCCW(result);
+    if (sameBoardState(board, result)) return { moved: false };
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      if (result[r][c]) { result[r][c].row = r; result[r][c].col = c; }
+    }
+    board = result;
+    score += gained;
+    return { moved: true, milestones };
+  }
+  function canMove() {
+    if (emptyCells().length) return true;
+    for (let r = 0; r < SIZE; r++) for (let c = 0; c < SIZE; c++) {
+      const v = board[r][c].value;
+      if (r + 1 < SIZE && board[r + 1][c].value === v) return true;
+      if (c + 1 < SIZE && board[r][c + 1].value === v) return true;
+    }
+    return false;
+  }
+  function showCoupon(value) {
+    const cfg = COUPONS[value]; if (!cfg) return;
+    const now = new Date();
+    const expiry = new Date(now.getTime() + cfg.days * 86400000);
+    const serial = genSerial();
+    couponPrize.textContent = cfg.prize;
+    couponSub.textContent = cfg.sub;
+    couponSerial.textContent = serial;
+    couponExpiry.textContent = fmtDate(expiry);
+    const list = loadCoupons();
+    list.unshift({ value, prize: cfg.prize, sub: cfg.sub, serial, expiry: fmtDate(expiry), issued: fmtDate(now) });
+    saveCoupons(list);
+    couponModal.classList.add("show");
+  }
+  function step(direction) {
+    if (couponModal.classList.contains("show") || listModal.classList.contains("show")) return;
+    if (overlay.classList.contains("show")) return;
+    const res = move(direction);
+    if (!res.moved) return;
+    spawn(); render();
+    if (res.milestones && res.milestones.length) {
+      for (const m of res.milestones) {
+        if (!unlocked.has(m)) {
+          unlocked.add(m);
+          setTimeout(() => showCoupon(m), 250);
+          break;
+        }
+      }
+    }
+    if (!canMove()) {
+      overlayTitle.textContent = "No More Reps";
+      overlayMsg.textContent = `本局得分 ${score} ・ 我的優惠券可重新查看`;
+      overlay.classList.add("show");
+    }
+  }
+  function renderCouponList() {
+    const list = loadCoupons();
+    if (!list.length) {
+      couponListEl.innerHTML = `<div class="empty">尚未獲得優惠券<br/>達成 512 / 1024 / 2048 即可解鎖</div>`;
+      return;
+    }
+    couponListEl.innerHTML = list.map((c) => `
+      <div class="coupon">
+        <div class="coupon-head">
+          <div class="logo-mini">🥊</div>
+          <div class="titles">
+            <div class="name">DEMO Gym</div>
+            <div class="sub">Beast Mode ・ Voucher</div>
+          </div>
+        </div>
+        <div class="coupon-body">
+          <div class="label">PRIZE</div>
+          <div class="prize">${c.prize}</div>
+          <div class="prize-sub">${c.sub}</div>
+          <div class="stamp">DEMO<br/>OFFICIAL</div>
+        </div>
+        <div class="coupon-foot">
+          <div class="row">編號<strong>${c.serial}</strong></div>
+          <div class="row right">有效期限<strong>${c.expiry}</strong></div>
+        </div>
+        <div class="coupon-terms">本券限門市使用一次 ・ 不得與其他優惠並用</div>
+      </div>
+    `).join("");
+  }
+
+  const keyMap = { ArrowLeft:"left", ArrowRight:"right", ArrowUp:"up", ArrowDown:"down", a:"left", d:"right", w:"up", s:"down", A:"left", D:"right", W:"up", S:"down" };
+  window.addEventListener("keydown", (e) => {
+    const dir = keyMap[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    step(dir);
+  });
+  let touchStart = null;
+  boardEl.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1) return;
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  boardEl.addEventListener("touchend", (e) => {
+    if (!touchStart) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
+    touchStart = null;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    if (Math.max(absX, absY) < 24) return;
+    if (absX > absY) step(dx > 0 ? "right" : "left");
+    else step(dy > 0 ? "down" : "up");
+  }, { passive: true });
+
+  newGameBtn.addEventListener("click", reset);
+  overlayRestart.addEventListener("click", reset);
+  couponClose.addEventListener("click", () => couponModal.classList.remove("show"));
+  couponScreenshotHint.addEventListener("click", () => alert("請使用裝置截圖功能保存此優惠券，至門市出示即可。"));
+  myCouponsBtn.addEventListener("click", () => { renderCouponList(); listModal.classList.add("show"); if (window.twemoji) twemoji.parse(couponListEl); });
+  listClose.addEventListener("click", () => listModal.classList.remove("show"));
+
+  best = loadBest();
+  bestEl.textContent = best;
+  reset();
+  if (window.twemoji) twemoji.parse(document.body);
+})();
+</script>
+</body>
+</html>
